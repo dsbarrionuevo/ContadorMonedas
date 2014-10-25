@@ -9,7 +9,7 @@ public class HoughCircular{
 	private int[][] imagen;
 	private int ANCHO = 200;
 	private int ALTO = 200;
-	private final int RADIO = 26; // Dejo fijo el radio. Solo manejo dos parámetros a y b.
+	private final int RADIO = 26;
 	private final int colorBlue = Color.blue.getRGB();
 
 	public HoughCircular(){
@@ -25,7 +25,8 @@ public class HoughCircular{
 		for(int i = 0; i < this.acumuladora.length; i++){
 			for(int j = 0; j < this.acumuladora[0].length; j++){
 				if(this.acumuladora[i][j] != 0){
-					dibujarCirculo(i, j, img);
+					img.setRGB(i, j, colorBlue);
+					//dibujarCirculo(i, j, img);
 					System.out.println(i + ", " + j + ": " + this.acumuladora[i][j]);
 				}
 			}
@@ -48,51 +49,54 @@ public class HoughCircular{
 		}
 	}
 	
-	private Par proximoXY(int desdeX, int desdeY){
-		Par xy = null;
-		for(int x = desdeX + 1; x < this.imagen.length; x++){
-			for(int y = desdeY + 1; y < this.imagen[0].length; y++){
-				if(this.imagen[x][y] == 1){
-					xy = new Par();
-					xy.primero = x;
-					xy.segundo = y;
-					break;
+	private Par proximoXY(int desdeFila, int desdeCol){
+		Par fc = null;
+		for(int f = desdeFila + 1; f < this.imagen.length; f++){
+			for(int c = desdeCol + 1; c < this.imagen[0].length; c++){
+				if(this.imagen[f][c] == 1){
+					fc = new Par();
+					fc.primero = f;
+					fc.segundo = c;
+					return fc;
 				}
 			}
 		}
-		return xy;
+		return fc;
 	}
 	
 	public void llenarMatrizAcumuladora(){
-		Par xy = null;
+		Par fc = null;
 		int radio = RADIO;
 		do{
-			if(xy == null){
-				xy = proximoXY(0, 0);
+			if(fc == null){
+				fc = proximoXY(0, 0);
 			}else{
-				xy = proximoXY(xy.primero, xy.segundo);
+				fc = proximoXY(fc.primero, fc.segundo);
 			}
-			if(xy != null){
-				calcularA(xy.primero, xy.segundo, radio);
+			if(fc != null){
+				calcularA(fc.primero, fc.segundo, radio);
 			}
-		}while(xy != null);
+		}while(fc != null);
 	}
 	
-	private void calcularA(int x, int y, int radio){
+	private void calcularA(int f, int c, int radio){
 		for(int a = 0; a < 200; a++){
-			if(x - a < radio){
-				int b = getB(x, y, radio, a);
+			if(Math.abs(c - a) < radio){
+				int b = getB(f, c, radio, a);
 				if(b >= 0 && b < 200){
-					this.acumuladora[a][b]++;
+					this.acumuladora[b+f][a]++;
+					if(-b+f >= 0){
+						this.acumuladora[-b+f][a]++;
+					}
 				}
-			}			
+			}
 		}
 	}
 	
-	private int getB(int x, int y, int radio, int a){
+	private int getB(int f, int c, int radio, int a){
 		//System.out.println(x + ", " + y + ", " + radio + ", " + a);
 		//System.out.println((int) (Math.sqrt(radio * radio - (x - a) * (x - a)) + y));
-		return (int) (Math.sqrt(radio * radio - (x - a) * (x - a)) + y);
+		return (int) (Math.sqrt(radio * radio - (c - a) * (c - a)));
 	}
 	
 	public static void main(String args[]){
@@ -104,7 +108,7 @@ public class HoughCircular{
 					Color color = new Color(img.getRGB(i, j));
 					if(color.getRed() == 0){
 						// Encontré un pixel negro.
-						hc.addXY(i, j);
+						hc.addXY(j, i);
 					}
 				}
 			}
