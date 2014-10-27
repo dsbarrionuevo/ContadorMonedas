@@ -475,19 +475,22 @@ public class Imagen {
 
     public static void main(String[] args) {
         try {
-            BufferedImage original = ImageIO.read(new File("./imagenes/moneda_1.png"));
+            BufferedImage original = ImageIO.read(new File("./imagenes/moneda_3.png"));
             Imagen imagen = new Imagen(original);
             imagen.escalaGrises(true);
             //Color masClaro = imagen.colorMasClaro();
             //System.out.println("El mas claro fue: "+((masClaro.getRed() + masClaro.getGreen() + masClaro.getBlue()) / 3));
             //imagen.binarizar(masClaro, true);
-            int umbral = 100;
+            int umbral = 80;
             imagen.binarizar(new Color(umbral, umbral, umbral), true);
+            
             ArrayList<Punto> puntosContorno = imagen.contornear();
+            System.out.println("encontre "+puntosContorno.size()+" puntos");
             for (Punto punto : puntosContorno) {
                 imagen.pintarPixel(punto.getX(), punto.getY(), Color.yellow);
             }
-            imagen.guardar("./imagenes/moneda_1_resultado_2.png");
+            
+            imagen.guardar("./imagenes/moneda_3_resultado.png");
         } catch (IOException ex) {
             Logger.getLogger(Imagen.class.getName()).log(Level.SEVERE, null, ex);
         }
