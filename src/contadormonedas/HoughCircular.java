@@ -9,35 +9,60 @@ import java.util.*;
 
 public class HoughCircular {
 
-    public int[][] acumuladora;
+    private int[][] acumuladora;
     private int[][] imagen;
-    private int ANCHO = 200;
-    private int ALTO = 200;
-    private final int RADIO = 26;
-    private final int colorBlue = Color.blue.getRGB();
-    private BufferedImage bfi;
+    private final int ANCHO;
+    private final int ALTO;
+    private ArrayList<Integer> radios;
+    private int radioActual;
+    private int maxAcumulado;
 
-    public HoughCircular(BufferedImage bfi) {
+    public HoughCircular() {
+        this.ANCHO = 200;
+        this.ALTO = 200;
         this.imagen = new int[ANCHO][ALTO];
         this.acumuladora = new int[ANCHO][ALTO];
-        this.bfi = bfi;
+        this.radios = new ArrayList<>();
+    }
+
+    public HoughCircular(int ancho, int alto) {
+        this.ANCHO = ancho;
+        this.ALTO = alto;
+        this.imagen = new int[ancho][alto];
+        this.acumuladora = new int[ancho][alto];
+        this.radios = new ArrayList<>();
     }
 
     public void addXY(int f, int c) {
         this.imagen[f][c] = 1;
     }
 
-    public void mostrarValoresDistintosDeCero(BufferedImage img) {
+    public void addRadio(int radio) {
+        this.radios.add(radio);
+    }
+
+    public void dibujarParametros(BufferedImage img) {
         int max = 0;
         for (int i = 0; i < this.acumuladora.length; i++) {
             for (int j = 0; j < this.acumuladora[0].length; j++) {
-                if (this.acumuladora[i][j] >= 5 && this.acumuladora[i][j] < 10) {
+                if (max < this.acumuladora[i][j]) {
+                    max = this.acumuladora[i][j];
+                }
+            }
+        }
+        int lim1 = (int) (max * 0.95);
+        int lim2 = (int) (max * 0.5);
+        int lim3 = (int) (max * 0.3);
+        int lim4 = (int) (max * 0.2);
+        for (int i = 0; i < this.acumuladora.length; i++) {
+            for (int j = 0; j < this.acumuladora[0].length; j++) {
+                if (this.acumuladora[i][j] >= lim4 && this.acumuladora[i][j] < lim3) {
                     img.setRGB(j, i, Color.blue.getRGB());
-                } else if (this.acumuladora[i][j] >= 10 && this.acumuladora[i][j] < 20) {
+                } else if (this.acumuladora[i][j] >= lim3 && this.acumuladora[i][j] < lim2) {
                     img.setRGB(j, i, Color.yellow.getRGB());
-                } else if (this.acumuladora[i][j] >= 20 && this.acumuladora[i][j] < 50) {
+                } else if (this.acumuladora[i][j] >= lim2 && this.acumuladora[i][j] < lim1) {
                     img.setRGB(j, i, Color.orange.getRGB());
-                } else if (this.acumuladora[i][j] >= 50) {
+                } else if (this.acumuladora[i][j] >= lim1) {
                     img.setRGB(j, i, Color.red.getRGB());
                 }
                 if (max < this.acumuladora[i][j]) {
@@ -45,36 +70,47 @@ public class HoughCircular {
                 }
             }
         }
-        System.out.println(max);
-
+        this.maxAcumulado = max;
     }
 
     public void dibujarCirculo(int a, int b, BufferedImage bf) {
-        System.out.println("Dibujando círculo: " + a + ", " + b);
+        //      System.out.println("Dibujando círculo: " + a + ", " + b);
         for (int i = 0; i < 1000; i++) {
             int x = i;
-            int radicando = RADIO * RADIO - (x - a) * (x - a);
+            int radicando = radioActual * radioActual - (x - a) * (x - a);
             if (radicando >= 0) {
                 int y = (int) (Math.sqrt(radicando) + b);
                 if (x >= 0 && x < 200 && y >= 0 && y < 200 && y - (y - b) * 2 >= 0) {
-                    bf.setRGB(x, y, colorBlue);
-                    bf.setRGB(x, y - (y - b) * 2, colorBlue);
+                    bf.setRGB(x, y, Color.blue.getRGB());
+                    bf.setRGB(x, y - (y - b) * 2, Color.blue.getRGB());
                 }
             }
         }
     }
 
+    private void limpiarMatrizAcumuladora(){
+        for(int i = 0; i < this.acumuladora.length; i++){
+            for(int j = 0; j < this.acumuladora[0].length; j++){
+                this.acumuladora[i][j] = 0;
+            }
+        }
+    }
+    
     public void llenarMatrizAcumuladora() {
-        int radio = RADIO;
-        Par fc = null;
-        for (int f = 0; f < this.imagen.length; f++) {
-            for (int c = 0; c < this.imagen[0].length; c++) {
-                if (this.imagen[f][c] == 1) {
-                    fc = new Par();
-                    fc.primero = f;
-                    fc.segundo = c;
-                    //this.bfi.setRGB(f, c, Color.red.getRGB());
-                    calcularA(fc.primero, fc.segundo, radio);
+        limpiarMatrizAcumuladora();
+        for (Integer r : this.radios) {
+            radioActual = r;
+            int radio = radioActual;
+            Par fc;
+            for (int f = 0; f < this.imagen.length; f++) {
+                for (int c = 0; c < this.imagen[0].length; c++) {
+                    if (this.imagen[f][c] == 1) {
+                        fc = new Par();
+                        fc.primero = f;
+                        fc.segundo = c;
+                        //this.bfi.setRGB(f, c, Color.red.getRGB());
+                        calcularA(fc.primero, fc.segundo, radio);
+                    }
                 }
             }
         }
@@ -85,7 +121,9 @@ public class HoughCircular {
             if (Math.abs(c - a) < radio) {
                 int b = getB(f, c, radio, a);
                 if (b >= 0 && b < 200) {
-                    this.acumuladora[b + f][a]++;
+                    if (b + f < 200) {
+                        this.acumuladora[b + f][a]++;
+                    }
                     if (-b + f >= 0) {
                         this.acumuladora[-b + f][a]++;
                     }
@@ -100,11 +138,16 @@ public class HoughCircular {
         return (int) (Math.sqrt(radio * radio - (c - a) * (c - a)));
     }
 
+    public int[][] getMatrizAcumuladora() {
+        return this.acumuladora;
+    }
+
     public static void main(String args[]) {
         //String nombreImagen = JOptionPane.showInputDialog(null, "Ingrese el nombre de la imagen");
         try {
-            BufferedImage img = ImageIO.read(new File("imagenes/circulo2.png"));
-            HoughCircular hc = new HoughCircular(img);
+            BufferedImage img = ImageIO.read(new File("imagenes/circulo8.png"));
+            HoughCircular hc = new HoughCircular();
+
             for (int i = 0; i < img.getWidth(); i++) {
                 for (int j = 0; j < img.getHeight(); j++) {
                     Color color = new Color(img.getRGB(i, j));
@@ -114,10 +157,18 @@ public class HoughCircular {
                     }
                 }
             }
-            hc.llenarMatrizAcumuladora();
-            hc.mostrarValoresDistintosDeCero(img);
-            System.out.println(DetectorRegiones.getRegiones(hc.acumuladora).size());
-            //hc.dibujarCirculo(40, 40, img);
+            ArrayList<Integer> radios = new ArrayList<>();
+            radios.add(17);
+            radios.add(26);
+            radios.add(41);
+            for (Integer radio : radios) {
+                hc.addRadio(radio);
+                hc.llenarMatrizAcumuladora();
+                hc.dibujarParametros(img);
+                int max = hc.maxAcumulado;
+                int umbral = (int) (max * 0.95);
+                System.out.println("La cantidad de círculos detectados cuyo radio aproximado es " + radio + " fueron " + DetectorRegiones.getRegiones(hc.acumuladora, umbral, max).size());
+            }
             Ventana v = new Ventana(img);
             v.setVisible(true);
 
@@ -156,12 +207,12 @@ class Region {
 
 class DetectorRegiones {
 
-    public static ArrayList<Region> getRegiones(int[][] matrizAcumuladora) {
+    public static ArrayList<Region> getRegiones(int[][] matrizAcumuladora, int umbral, int max) {
         ArrayList<Region> regiones = new ArrayList<Region>();
         boolean vistos[][] = new boolean[matrizAcumuladora.length][matrizAcumuladora[0].length];
         for (int i = 0; i < matrizAcumuladora.length; i++) {
             for (int j = 0; j < matrizAcumuladora[0].length; j++) {
-                if (matrizAcumuladora[i][j] >= 50 && !vistos[i][j]) {
+                if (matrizAcumuladora[i][j] >= umbral && !vistos[i][j] && matrizAcumuladora[i][j] <= max) {
                     Region region = new Region();
                     buscarRegion(i, j, region.puntos, matrizAcumuladora, vistos);
                     regiones.add(region);
