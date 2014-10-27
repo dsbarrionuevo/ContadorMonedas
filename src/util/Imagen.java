@@ -366,8 +366,9 @@ public class Imagen {
     private static final int DIR_ARRIBA = 2;
     private static final int DIR_ABAJO = 3;
 
-    public boolean contornear(Color colorContorno) {
+    public ArrayList<Punto> contornear() {
         //FALTA considerar no sobrepasar el limite del ancho y alto de la imagen
+        ArrayList<Punto> puntosContorno = new ArrayList<>();
         boolean encontrePrimerPixel = false;
         int[] coor = new int[2];
         Color color = Color.black;
@@ -391,7 +392,9 @@ public class Imagen {
                 //seguirContorno(color, proxX, proxY, vengoDe);
                 if (color.equals(Color.black)) {
                     //giro a la izquierda
-                    imagen.setRGB(proxX, proxY, colorContorno.getRGB());
+                    //para pintar el contorno
+                    //imagen.setRGB(proxX, proxY, colorContorno.getRGB());
+                    puntosContorno.add(new Punto(proxX, proxY));
                     switch (vengoDe) {
                         case (DIR_IZQUIERDA):
                             proxY--; //voy arriba
@@ -432,20 +435,63 @@ public class Imagen {
                     }
                 }
                 if (proxY < 0 || proxY > pixeles.length - 1 || proxX < 0 || proxX > pixeles[0].length - 1) {
-                    return false;
+                    break;
                 }
                 color = pixeles[proxY][proxX];
                 if (proxX == coor[0] && proxY == coor[1]) {
                     break;
                 }
             } while (true);
-            return true;
         }
-        return false;
+        return puntosContorno;
+    }
+
+    private Color colorMasClaro() {
+        //podria calcula el promedio de los ultimos 10 mas claros
+        Color masClaro = Color.black;
+        for (int i = 0; i < pixeles.length; i++) {
+            for (int j = 0; j < pixeles[i].length; j++) {
+                Color pixel = pixeles[i][j];
+                int intensidad = (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3;
+                int intensidadMasClaro = (masClaro.getRed() + masClaro.getGreen() + masClaro.getBlue()) / 3;
+                //System.out.println("intensidad:" + intensidad);
+                if (intensidad > intensidadMasClaro) {
+                    masClaro = new Color(intensidad, intensidad, intensidad);
+                    System.out.println("Hola! masClaro: " + intensidad);
+                }
+            }
+        }
+        return masClaro;
+    }
+
+    public void pintarPixel(int x, int y, Color color) {
+        imagen.setRGB(x, y, color.getRGB());
+        pixeles[y][x] = color;
     }
 
     public void guardar(String nombreArchivo) throws IOException {
         ImageIO.write(imagen, "png", new File(nombreArchivo));
+    }
+
+    public static void main(String[] args) {
+        try {
+            BufferedImage original = ImageIO.read(new File("./imagenes/moneda_1.png"));
+            Imagen imagen = new Imagen(original);
+            imagen.escalaGrises(true);
+            //Color masClaro = imagen.colorMasClaro();
+            //System.out.println("El mas claro fue: "+((masClaro.getRed() + masClaro.getGreen() + masClaro.getBlue()) / 3));
+            //imagen.binarizar(masClaro, true);
+            int umbral = 100;
+            imagen.binarizar(new Color(umbral, umbral, umbral), true);
+            ArrayList<Punto> puntosContorno = imagen.contornear();
+            for (Punto punto : puntosContorno) {
+                imagen.pintarPixel(punto.getX(), punto.getY(), Color.yellow);
+            }
+            imagen.guardar("./imagenes/moneda_1_resultado_2.png");
+        } catch (IOException ex) {
+            Logger.getLogger(Imagen.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
     }
 
 }

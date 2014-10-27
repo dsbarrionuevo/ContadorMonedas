@@ -7,7 +7,7 @@ package util;
  */
 public class Punto {
 
-    public int x, y;
+    private int x, y;
 
     public Punto(int x, int y) {
         this.x = x;
