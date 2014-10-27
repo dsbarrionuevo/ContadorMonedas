@@ -103,7 +103,7 @@ public class HoughCircular {
     public static void main(String args[]) {
         //String nombreImagen = JOptionPane.showInputDialog(null, "Ingrese el nombre de la imagen");
         try {
-            BufferedImage img = ImageIO.read(new File("src/contadormonedas/circulo2.png"));
+            BufferedImage img = ImageIO.read(new File("imagenes/circulo2.png"));
             HoughCircular hc = new HoughCircular(img);
             for (int i = 0; i < img.getWidth(); i++) {
                 for (int j = 0; j < img.getHeight(); j++) {
