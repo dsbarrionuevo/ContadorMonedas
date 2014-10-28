@@ -17,7 +17,7 @@ public class HoughCircular {
     private int radioActual;
     private int maxAcumulado;
     private static double exigencia = 0.95;
-    private static String archivo = "imagenes/circulo13.png";
+    private static String archivo = "imagenes/circulo17.png";
 
     public HoughCircular() {
         this.ANCHO = 200;
@@ -59,11 +59,11 @@ public class HoughCircular {
         for (int i = 0; i < this.acumuladora.length; i++) {
             for (int j = 0; j < this.acumuladora[0].length; j++) {
                 if (this.acumuladora[i][j] >= lim4 && this.acumuladora[i][j] < lim3) {
-                    img.setRGB(j, i, Color.blue.getRGB());
+//                    img.setRGB(j, i, Color.blue.getRGB());
                 } else if (this.acumuladora[i][j] >= lim3 && this.acumuladora[i][j] < lim2) {
-                    img.setRGB(j, i, Color.yellow.getRGB());
+//                    img.setRGB(j, i, Color.yellow.getRGB());
                 } else if (this.acumuladora[i][j] >= lim2 && this.acumuladora[i][j] < lim1) {
-                    img.setRGB(j, i, Color.orange.getRGB());
+//                    img.setRGB(j, i, Color.orange.getRGB());
                 } else if (this.acumuladora[i][j] >= lim1) {
                     img.setRGB(j, i, Color.red.getRGB());
                     dibujarCirculo(j, i, img);
@@ -162,6 +162,9 @@ public class HoughCircular {
 //            radios.add(17);
             radios.add(26);
 //            radios.add(41);
+            
+//            radios.add(35);
+//            radios.add(48);
             StringBuilder sb = new StringBuilder();
             for (Integer radio : radios) {
                 hc.addRadio(radio);
@@ -169,12 +172,14 @@ public class HoughCircular {
                 hc.dibujarParametros(img);
                 int max = hc.maxAcumulado;
                 int umbral = (int) (max * exigencia);
+                int umbral2 = (int) (max * 0.5);
                 sb.append("La cantidad de círculos detectados cuyo radio aproximado es ");
                 sb.append(radio);
                 sb.append(" fueron ");
-                sb.append(DetectorRegiones.getRegiones(hc.acumuladora, umbral, max).size());
+                sb.append(DetectorRegiones.getRegiones(hc.acumuladora, umbral, umbral2, max).size());
                 sb.append("\n");
             }
+            System.out.println(sb.toString());
             Ventana v = new Ventana(img, sb.toString());
             v.setVisible(true);
 
@@ -219,14 +224,14 @@ class Region {
 
 class DetectorRegiones {
 
-    public static ArrayList<Region> getRegiones(int[][] matrizAcumuladora, int umbral, int max) {
+    public static ArrayList<Region> getRegiones(int[][] matrizAcumuladora, int umbral, int umbral2, int max) {
         ArrayList<Region> regiones = new ArrayList<Region>();
         boolean vistos[][] = new boolean[matrizAcumuladora.length][matrizAcumuladora[0].length];
         for (int i = 0; i < matrizAcumuladora.length; i++) {
             for (int j = 0; j < matrizAcumuladora[0].length; j++) {
                 if (matrizAcumuladora[i][j] >= umbral && !vistos[i][j] && matrizAcumuladora[i][j] <= max) {
                     Region region = new Region();
-                    buscarRegion(i, j, region.puntos, matrizAcumuladora, vistos);
+                    buscarRegionRec(i, j, region.puntos, matrizAcumuladora, umbral, vistos);
                     regiones.add(region);
                 }
                 vistos[i][j] = true;
@@ -235,19 +240,78 @@ class DetectorRegiones {
         return regiones;
     }
 
-    private static void buscarRegion(int f, int c, ArrayList<Par> puntos, int[][] matrizAcumuladora, boolean vistos[][]) {
-        if (matrizAcumuladora[f][c] >= 50 && !vistos[f][c]) {
+    private static void buscarRegionRec(int f, int c, ArrayList<Par> puntos, int[][] matrizAcumuladora, int umbral, boolean vistos[][]) {
+        if (matrizAcumuladora[f][c] >= umbral && !vistos[f][c]) {
             vistos[f][c] = true;
             Par par = new Par();
             par.primero = f;
             par.segundo = c;
             puntos.add(par);
-            buscarRegion(f, c + 1, puntos, matrizAcumuladora, vistos);
-            buscarRegion(f + 1, c, puntos, matrizAcumuladora, vistos);
-            buscarRegion(f, c - 1, puntos, matrizAcumuladora, vistos);
-            buscarRegion(f - 1, c, puntos, matrizAcumuladora, vistos);
-        } else {
-            return;
+
+            buscarRegionRec(f, c + 1, puntos, matrizAcumuladora, umbral, vistos);
+            buscarRegionRec(f + 1, c, puntos, matrizAcumuladora, umbral, vistos);
+            buscarRegionRec(f, c - 1, puntos, matrizAcumuladora, umbral, vistos);
+            buscarRegionRec(f - 1, c, puntos, matrizAcumuladora, umbral, vistos);
         }
     }
+
+    private static void buscarRegion(int f, int c, ArrayList<Par> puntos, int[][] matrizAcumuladora, int umbral, boolean vistos[][]) {
+        Stack<Par> pila = new Stack<>();
+        if (matrizAcumuladora[f][c] >= umbral && !vistos[f][c]) {
+            vistos[f][c] = true;
+            Par par = new Par();
+            par.primero = f;
+            par.segundo = c;
+            puntos.add(par);
+            pila.add(par);
+            while (!pila.isEmpty()) {
+                Par top = pila.peek();
+                f = top.primero;
+                c = top.segundo;
+                c++;
+                while (matrizAcumuladora[f][c] >= umbral && !vistos[f][c]) {
+                    vistos[f][c] = true;
+                    par = new Par();
+                    par.primero = f;
+                    par.segundo = c;
+                    puntos.add(par);
+                    pila.add(par);
+                    top = par;
+                    c = c + 1;
+                }
+                while (matrizAcumuladora[f][c] >= umbral && !vistos[f][c]) {
+                    vistos[f][c] = true;
+                    par = new Par();
+                    par.primero = f;
+                    par.segundo = c;
+                    puntos.add(par);
+                    pila.add(par);
+                    top = par;
+                    f = f + 1;
+                }
+                while (matrizAcumuladora[f][c] >= umbral && !vistos[f][c]) {
+                    vistos[f][c] = true;
+                    par = new Par();
+                    par.primero = f;
+                    par.segundo = c;
+                    puntos.add(par);
+                    pila.add(par);
+                    top = par;
+                    c = c - 1;
+                }
+                while (matrizAcumuladora[f][c] >= umbral && !vistos[f][c]) {
+                    vistos[f][c] = true;
+                    par = new Par();
+                    par.primero = f;
+                    par.segundo = c;
+                    puntos.add(par);
+                    pila.add(par);
+                    top = par;
+                    f = f - 1;
+                }
+                pila.pop();
+            }
+        }
+    }
+
 }
