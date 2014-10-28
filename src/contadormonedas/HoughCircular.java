@@ -16,8 +16,8 @@ public class HoughCircular {
     private ArrayList<Integer> radios;
     private int radioActual;
     private int maxAcumulado;
-    private static double exigencia = 0.95;
-    private static String archivo = "imagenes/circulo17.png";
+    private double exigencia = 0.95;
+    private static String archivo = "imagenes/circulo18.png";
 
     public HoughCircular() {
         this.ANCHO = 200;
@@ -27,11 +27,12 @@ public class HoughCircular {
         this.radios = new ArrayList<>();
     }
 
-    public HoughCircular(int ancho, int alto) {
+    public HoughCircular(int ancho, int alto, double exigencia) {
         this.ANCHO = ancho;
         this.ALTO = alto;
         this.imagen = new int[alto][ancho];
         this.acumuladora = new int[alto][ancho];
+        this.exigencia = exigencia;
         this.radios = new ArrayList<>();
     }
 
@@ -41,6 +42,14 @@ public class HoughCircular {
 
     public void addRadio(int radio) {
         this.radioActual = radio;
+    }
+
+    public int getMaxAcumulado() {
+        return this.maxAcumulado;
+    }
+
+    public int[][] getMatrizAcumuladora() {
+        return this.acumuladora;
     }
 
     public void dibujarParametros(BufferedImage img) {
@@ -84,8 +93,10 @@ public class HoughCircular {
             if (radicando >= 0) {
                 int y = (int) (Math.sqrt(radicando) + b);
                 if (x >= 0 && x < ANCHO && y >= 0 && y < ALTO && y - (y - b) * 2 >= 0) {
-                    bf.setRGB(x, y, Color.pink.getRGB());
-                    bf.setRGB(x, y - (y - b) * 2, Color.pink.getRGB());
+                    bf.setRGB(x, y, Color.green.getRGB());
+                    bf.setRGB(x, y - (y - b) * 2, Color.green.getRGB());
+                    bf.setRGB(x - 1, y - 1, Color.green.getRGB());
+                    bf.setRGB(x + 1, (y - (y - b) * 2) + 1, Color.green.getRGB());
                 }
             }
         }
@@ -139,71 +150,50 @@ public class HoughCircular {
         return (int) (Math.sqrt(radio * radio - (c - a) * (c - a)));
     }
 
-    public int[][] getMatrizAcumuladora() {
-        return this.acumuladora;
-    }
-
     public static void main(String args[]) {
         //String nombreImagen = JOptionPane.showInputDialog(null, "Ingrese el nombre de la imagen");
-        try {
-            BufferedImage img = ImageIO.read(new File(archivo));
-            HoughCircular hc = new HoughCircular(img.getWidth(), img.getHeight());
-
-            for (int i = 0; i < img.getWidth(); i++) {
-                for (int j = 0; j < img.getHeight(); j++) {
-                    Color color = new Color(img.getRGB(i, j));
-                    if (color.equals(Color.black)) {
-                        // Encontré un pixel negro.
-                        hc.addXY(j, i);
-                    }
-                }
-            }
-            ArrayList<Integer> radios = new ArrayList<>();
-//            radios.add(17);
-            radios.add(26);
-//            radios.add(41);
-            
-//            radios.add(35);
+//        try {
+//            BufferedImage img = ImageIO.read(new File(archivo));
+//            HoughCircular hc = new HoughCircular(img.getWidth(), img.getHeight());
+//
+//            for (int i = 0; i < img.getWidth(); i++) {
+//                for (int j = 0; j < img.getHeight(); j++) {
+//                    Color color = new Color(img.getRGB(i, j));
+//                    if (color.equals(Color.black)) {
+//                        // Encontré un pixel negro.
+//                        hc.addXY(j, i);
+//                    }
+//                }
+//            }
+//            ArrayList<Integer> radios = new ArrayList<>();
+////            radios.add(17);
+////            radios.add(26);
+////            radios.add(41);
+//
+////            radios.add(35);
 //            radios.add(48);
-            StringBuilder sb = new StringBuilder();
-            for (Integer radio : radios) {
-                hc.addRadio(radio);
-                hc.llenarMatrizAcumuladora();
-                hc.dibujarParametros(img);
-                int max = hc.maxAcumulado;
-                int umbral = (int) (max * exigencia);
-                int umbral2 = (int) (max * 0.5);
-                sb.append("La cantidad de círculos detectados cuyo radio aproximado es ");
-                sb.append(radio);
-                sb.append(" fueron ");
-                sb.append(DetectorRegiones.getRegiones(hc.acumuladora, umbral, umbral2, max).size());
-                sb.append("\n");
-            }
-            System.out.println(sb.toString());
-            Ventana v = new Ventana(img, sb.toString());
-            v.setVisible(true);
+//            StringBuilder sb = new StringBuilder();
+//            for (Integer radio : radios) {
+//                hc.addRadio(radio);
+//                hc.llenarMatrizAcumuladora();
+//                hc.dibujarParametros(img);
+//                int max = hc.maxAcumulado;
+//                int umbral = (int) (max * exigencia);
+//                //int umbral2 = (int) (max * 0.5);
+//                sb.append("La cantidad de círculos detectados cuyo radio aproximado es ");
+//                sb.append(radio);
+//                sb.append(" fueron ");
+//                sb.append(DetectorRegiones.getRegiones(hc.acumuladora, umbral, max).size());
+//                sb.append("\n");
+//            }
+//            System.out.println(sb.toString());
+//            Ventana v = new Ventana(img, sb.toString());
+//            v.setVisible(true);
+//
+//        } catch (IOException e) {
+//            System.err.println(e.getMessage());
+//        }
 
-        } catch (IOException e) {
-            System.err.println(e.getMessage());
-        }
-
-    }
-
-    static class Ventana extends JFrame {
-
-        public Ventana(BufferedImage bfi, String resultado) {
-            super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            super.setBounds(0, 0, 500, 500);
-            super.setLayout(new FlowLayout());
-            JLabel lblImagen = new JLabel();
-            lblImagen.setIcon(new ImageIcon(bfi));
-            JTextArea txtTitulo = new JTextArea(resultado);
-            JScrollPane scroll = new JScrollPane(txtTitulo);
-//            scroll.setPreferredSize(new Dimension(300, 400));
-            super.add(lblImagen);
-            super.add(scroll);
-            pack();
-        }
     }
 }
 
@@ -224,7 +214,7 @@ class Region {
 
 class DetectorRegiones {
 
-    public static ArrayList<Region> getRegiones(int[][] matrizAcumuladora, int umbral, int umbral2, int max) {
+    public static ArrayList<Region> getRegiones(int[][] matrizAcumuladora, int umbral, int max) {
         ArrayList<Region> regiones = new ArrayList<Region>();
         boolean vistos[][] = new boolean[matrizAcumuladora.length][matrizAcumuladora[0].length];
         for (int i = 0; i < matrizAcumuladora.length; i++) {

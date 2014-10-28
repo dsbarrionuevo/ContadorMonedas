@@ -32,6 +32,16 @@ public class Imagen {
         }
         this.imagen = new BufferedImage(this.ancho, this.alto, bufferImagen.getType());
     }
+    
+    public static BufferedImage copiar(BufferedImage bfi){
+        BufferedImage nueva = new BufferedImage(bfi.getWidth(), bfi.getHeight(), bfi.getType());
+        for (int i = 0; i < bfi.getWidth(); i++) {
+            for (int j = 0; j < bfi.getHeight(); j++) {
+                nueva.setRGB(i, j, bfi.getRGB(i, j));
+            }
+        }
+        return nueva;
+    }
 
     public void fotocopiar() {
         for (int i = 0; i < pixeles.length; i++) {
@@ -473,6 +483,10 @@ public class Imagen {
             Logger.getLogger(Imagen.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+    }
+
+    public BufferedImage getImagen() {
+        return imagen;
     }
 
     public int getAncho() {
