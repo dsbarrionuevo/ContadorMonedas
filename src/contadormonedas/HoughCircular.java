@@ -16,6 +16,8 @@ public class HoughCircular {
     private ArrayList<Integer> radios;
     private int radioActual;
     private int maxAcumulado;
+    private static double exigencia = 0.95;
+    private static String archivo = "imagenes/circulo13.png";
 
     public HoughCircular() {
         this.ANCHO = 200;
@@ -28,8 +30,8 @@ public class HoughCircular {
     public HoughCircular(int ancho, int alto) {
         this.ANCHO = ancho;
         this.ALTO = alto;
-        this.imagen = new int[ancho][alto];
-        this.acumuladora = new int[ancho][alto];
+        this.imagen = new int[alto][ancho];
+        this.acumuladora = new int[alto][ancho];
         this.radios = new ArrayList<>();
     }
 
@@ -38,7 +40,7 @@ public class HoughCircular {
     }
 
     public void addRadio(int radio) {
-        this.radios.add(radio);
+        this.radioActual = radio;
     }
 
     public void dibujarParametros(BufferedImage img) {
@@ -50,7 +52,7 @@ public class HoughCircular {
                 }
             }
         }
-        int lim1 = (int) (max * 0.95);
+        int lim1 = (int) (max * exigencia);
         int lim2 = (int) (max * 0.5);
         int lim3 = (int) (max * 0.3);
         int lim4 = (int) (max * 0.2);
@@ -64,6 +66,7 @@ public class HoughCircular {
                     img.setRGB(j, i, Color.orange.getRGB());
                 } else if (this.acumuladora[i][j] >= lim1) {
                     img.setRGB(j, i, Color.red.getRGB());
+                    dibujarCirculo(j, i, img);
                 }
                 if (max < this.acumuladora[i][j]) {
                     max = this.acumuladora[i][j];
@@ -80,52 +83,50 @@ public class HoughCircular {
             int radicando = radioActual * radioActual - (x - a) * (x - a);
             if (radicando >= 0) {
                 int y = (int) (Math.sqrt(radicando) + b);
-                if (x >= 0 && x < 200 && y >= 0 && y < 200 && y - (y - b) * 2 >= 0) {
-                    bf.setRGB(x, y, Color.blue.getRGB());
-                    bf.setRGB(x, y - (y - b) * 2, Color.blue.getRGB());
+                if (x >= 0 && x < ANCHO && y >= 0 && y < ALTO && y - (y - b) * 2 >= 0) {
+                    bf.setRGB(x, y, Color.pink.getRGB());
+                    bf.setRGB(x, y - (y - b) * 2, Color.pink.getRGB());
                 }
             }
         }
     }
 
-    private void limpiarMatrizAcumuladora(){
-        for(int i = 0; i < this.acumuladora.length; i++){
-            for(int j = 0; j < this.acumuladora[0].length; j++){
+    private void limpiarMatrizAcumuladora() {
+        for (int i = 0; i < this.acumuladora.length; i++) {
+            for (int j = 0; j < this.acumuladora[0].length; j++) {
                 this.acumuladora[i][j] = 0;
             }
         }
     }
-    
+
     public void llenarMatrizAcumuladora() {
         limpiarMatrizAcumuladora();
-        for (Integer r : this.radios) {
-            radioActual = r;
-            int radio = radioActual;
-            Par fc;
-            for (int f = 0; f < this.imagen.length; f++) {
-                for (int c = 0; c < this.imagen[0].length; c++) {
-                    if (this.imagen[f][c] == 1) {
-                        fc = new Par();
-                        fc.primero = f;
-                        fc.segundo = c;
-                        //this.bfi.setRGB(f, c, Color.red.getRGB());
-                        calcularA(fc.primero, fc.segundo, radio);
-                    }
+        int radio = radioActual;
+        Par fc;
+        for (int f = 0; f < this.imagen.length; f++) {
+            for (int c = 0; c < this.imagen[0].length; c++) {
+                if (this.imagen[f][c] == 1) {
+                    fc = new Par();
+                    fc.primero = f;
+                    fc.segundo = c;
+                    //this.bfi.setRGB(f, c, Color.red.getRGB());
+                    calcularA(fc.primero, fc.segundo, radio);
                 }
             }
         }
     }
 
     private void calcularA(int f, int c, int radio) {
-        for (int a = 0; a < 200; a++) {
+        for (int a = 0; a < ANCHO; a++) {
             if (Math.abs(c - a) < radio) {
                 int b = getB(f, c, radio, a);
-                if (b >= 0 && b < 200) {
-                    if (b + f < 200) {
+                if (b >= 0 && b < ALTO) {
+                    if (b + f >= 0 && b + f < ALTO) {
                         this.acumuladora[b + f][a]++;
                     }
-                    if (-b + f >= 0) {
-                        this.acumuladora[-b + f][a]++;
+                    int aux = f - b;
+                    if (aux >= 0 && aux < ALTO) {
+                        this.acumuladora[aux][a]++;
                     }
                 }
             }
@@ -145,8 +146,8 @@ public class HoughCircular {
     public static void main(String args[]) {
         //String nombreImagen = JOptionPane.showInputDialog(null, "Ingrese el nombre de la imagen");
         try {
-            BufferedImage img = ImageIO.read(new File("imagenes/circulo8.png"));
-            HoughCircular hc = new HoughCircular();
+            BufferedImage img = ImageIO.read(new File(archivo));
+            HoughCircular hc = new HoughCircular(img.getWidth(), img.getHeight());
 
             for (int i = 0; i < img.getWidth(); i++) {
                 for (int j = 0; j < img.getHeight(); j++) {
@@ -158,18 +159,23 @@ public class HoughCircular {
                 }
             }
             ArrayList<Integer> radios = new ArrayList<>();
-            radios.add(17);
+//            radios.add(17);
             radios.add(26);
-            radios.add(41);
+//            radios.add(41);
+            StringBuilder sb = new StringBuilder();
             for (Integer radio : radios) {
                 hc.addRadio(radio);
                 hc.llenarMatrizAcumuladora();
                 hc.dibujarParametros(img);
                 int max = hc.maxAcumulado;
-                int umbral = (int) (max * 0.95);
-                System.out.println("La cantidad de círculos detectados cuyo radio aproximado es " + radio + " fueron " + DetectorRegiones.getRegiones(hc.acumuladora, umbral, max).size());
+                int umbral = (int) (max * exigencia);
+                sb.append("La cantidad de círculos detectados cuyo radio aproximado es ");
+                sb.append(radio);
+                sb.append(" fueron ");
+                sb.append(DetectorRegiones.getRegiones(hc.acumuladora, umbral, max).size());
+                sb.append("\n");
             }
-            Ventana v = new Ventana(img);
+            Ventana v = new Ventana(img, sb.toString());
             v.setVisible(true);
 
         } catch (IOException e) {
@@ -180,12 +186,18 @@ public class HoughCircular {
 
     static class Ventana extends JFrame {
 
-        public Ventana(BufferedImage bfi) {
+        public Ventana(BufferedImage bfi, String resultado) {
             super.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             super.setBounds(0, 0, 500, 500);
+            super.setLayout(new FlowLayout());
             JLabel lblImagen = new JLabel();
             lblImagen.setIcon(new ImageIcon(bfi));
+            JTextArea txtTitulo = new JTextArea(resultado);
+            JScrollPane scroll = new JScrollPane(txtTitulo);
+//            scroll.setPreferredSize(new Dimension(300, 400));
             super.add(lblImagen);
+            super.add(scroll);
+            pack();
         }
     }
 }
