@@ -21,8 +21,6 @@ public class Imagen {
     private Color[][] pixeles;
     private int ancho, alto;
 
-    static int valorMaximo = 0;
-
     public Imagen(BufferedImage bufferImagen) {
         this.ancho = bufferImagen.getWidth();
         this.alto = bufferImagen.getHeight();
@@ -286,24 +284,23 @@ public class Imagen {
         }
     }
 
-    public void regionGrowing() {
-        ArrayList<Punto> puntos = new ArrayList();
-        /*
-         int semillaX = (int) (Math.random() * (ancho - 2)) + 1;
-         int semillaY = (int) (Math.random() * (alto - 2)) + 1;
-         */
-        int semillaX = (int) (ancho / 2);
-        int semillaY = (int) (alto / 2);
-        tirarPunto(semillaX, semillaY, puntos);
-        Iterator<Punto> it = puntos.iterator();
-        while (it.hasNext()) {
-            Punto posicion = it.next();
-            imagen.setRGB((int) posicion.getY(), (int) posicion.getX(), (Color.blue).getRGB());
+    public ArrayList<Region> regionGrowing(int cantidadPruebas) {
+        ArrayList<Region> regiones = new ArrayList<>();
+        int[][] etiquetados = new int[alto][ancho];
+        for (int i = 1; i <= cantidadPruebas; i++) {
+            ArrayList<Punto> puntos = new ArrayList();
+            int semillaX = (int) (Math.random() * (ancho - 2)) + 1;
+            int semillaY = (int) (Math.random() * (alto - 2)) + 1;
+            tirarPunto(semillaX, semillaY, puntos, etiquetados, i);
+            if (!puntos.isEmpty()) {
+                regiones.add(new Region(i, puntos));
+            }
         }
+        return regiones;
     }
 
-    private void tirarPunto(int puntoX, int puntoY, ArrayList<Punto> puntos) {
-        if (puntoX < 0 || puntoX > ancho - 1 || puntoY < 0 || puntoY > alto - 1) {
+    private void tirarPunto(int puntoX, int puntoY, ArrayList<Punto> puntos, int[][] etiquetados, int etiqueta) {
+        if (puntoX < 0 || puntoX > ancho - 1 || puntoY < 0 || puntoY > alto - 1 || etiquetados[puntoY][puntoX] != 0) {
             return;
         }
         Color pixel = pixeles[puntoY][puntoX];
@@ -314,51 +311,19 @@ public class Imagen {
         int intensidadMedia = (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3;
         if (intensidadMedia < 128) {
             puntos.add(punto);
-            for (int i = puntoY - 1; i <= puntoY + 1; i++) {
-                for (int j = puntoX - 1; j <= puntoX + 1; j++) {
-                    tirarPunto(i, j, puntos);
-                }
-            }
+            etiquetados[puntoY][puntoX] = etiqueta;
+            tirarPunto(puntoX - 1, puntoY, puntos, etiquetados, etiqueta);
+            tirarPunto(puntoX + 1, puntoY, puntos, etiquetados, etiqueta);
+            tirarPunto(puntoX, puntoY - 1, puntos, etiquetados, etiqueta);
+            tirarPunto(puntoX, puntoY + 1, puntos, etiquetados, etiqueta);
+            /*
+             for (int i = puntoY - 1; i <= puntoY + 1; i++) {
+             for (int j = puntoX - 1; j <= puntoX + 1; j++) {
+             tirarPunto(i, j, puntos);
+             }
+             }
+             */
         }
-    }
-
-    public int[][] houghLineal(int rango, int delta) {
-        int rangoM = rango;//de 0 a rangoX/2 van los numeros negativos, y de rangoX/2 en adelante los positivos
-        int rangoC = rango;
-        int resultado[][] = new int[rangoC][rangoM];
-        for (int i = pixeles.length - 1; i >= 0; i--) {
-            for (int j = 0; j < pixeles[i].length; j++) {
-                Color pixel = pixeles[i][j];
-                if (pixel.equals(Color.black)) {
-                    int x = j;
-                    int y = i;
-                    //c = -m(x)+y
-                    for (int m = (-1) * (rangoM / 2); m < (rangoM / 2); m += delta) {
-                        int c = (-1) * m * (x) + y;
-                        int indiceC = -1, indiceM = -1;
-                        if (Math.abs(c) < rangoC / 2) {
-                            if (c <= 0) {
-                                indiceC = Math.abs(c);
-                            } else {
-                                indiceC = Math.abs(c) + (rangoC / 2);
-                            }
-                        }
-                        if (Math.abs(m) < rangoM / 2) {
-                            if (m <= 0) {
-                                indiceM = Math.abs(m);
-                            } else {
-                                indiceM = Math.abs(m) + (rangoM / 2);
-                            }
-                        }
-                        if (indiceC >= 0 && indiceM >= 0) {
-                            //System.out.println("c: " + c + ", m: " + m + "\t\tx: " + x + ", y: " + y);
-                            resultado[indiceC][indiceM]++;
-                        }
-                    }
-                }
-            }
-        }
-        return resultado;
     }
 
     private static final int DIR_IZQUIERDA = 0;
@@ -475,26 +440,47 @@ public class Imagen {
 
     public static void main(String[] args) {
         try {
-            BufferedImage original = ImageIO.read(new File("./imagenes/moneda_3.png"));
+            BufferedImage original = ImageIO.read(new File("./imagenes/regiones16.png"));
             Imagen imagen = new Imagen(original);
-            imagen.escalaGrises(true);
-            //Color masClaro = imagen.colorMasClaro();
-            //System.out.println("El mas claro fue: "+((masClaro.getRed() + masClaro.getGreen() + masClaro.getBlue()) / 3));
-            //imagen.binarizar(masClaro, true);
-            int umbral = 80;
-            imagen.binarizar(new Color(umbral, umbral, umbral), true);
-            
-            ArrayList<Punto> puntosContorno = imagen.contornear();
-            System.out.println("encontre "+puntosContorno.size()+" puntos");
-            for (Punto punto : puntosContorno) {
-                imagen.pintarPixel(punto.getX(), punto.getY(), Color.yellow);
+            imagen.fotocopiar();
+            imagen.binarizar(new Color(1, 1, 1), true);
+            ArrayList<Region> regiones = imagen.regionGrowing(imagen.getAncho() * imagen.getAlto());
+            System.out.println("Encontre " + regiones.size() + " regiones");
+            Iterator<Region> it = regiones.iterator();
+            while (it.hasNext()) {
+                Region region = it.next();
+
             }
+            /*
             
-            imagen.guardar("./imagenes/moneda_3_resultado.png");
+            
+             //imagen.escalaGrises(true);
+             //Color masClaro = imagen.colorMasClaro();
+             //System.out.println("El mas claro fue: "+((masClaro.getRed() + masClaro.getGreen() + masClaro.getBlue()) / 3));
+             //imagen.binarizar(masClaro, true);
+             int umbral = 80;
+             imagen.binarizar(new Color(umbral, umbral, umbral), true);
+
+             ArrayList<Punto> puntosContorno = imagen.contornear();
+             System.out.println("encontre " + puntosContorno.size() + " puntos");
+             for (Punto punto : puntosContorno) {
+             imagen.pintarPixel(punto.getX(), punto.getY(), Color.yellow);
+             }
+
+             */
+            imagen.guardar("./imagenes/_resultado.png");
         } catch (IOException ex) {
             Logger.getLogger(Imagen.class.getName()).log(Level.SEVERE, null, ex);
         }
 
+    }
+
+    public int getAncho() {
+        return ancho;
+    }
+
+    public int getAlto() {
+        return alto;
     }
 
 }

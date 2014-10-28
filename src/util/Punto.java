@@ -30,4 +30,10 @@ public class Punto {
         this.y = y;
     }
 
+    @Override
+    public boolean equals(Object punto) {
+        Punto puntoComparacion = (Punto) punto;
+        return (this.x == puntoComparacion.getX()) && (this.y == puntoComparacion.getY());
+    }
+
 }
