@@ -56,12 +56,10 @@ public class Controlador {
             imagen.fotocopiar();
             imagen.escalaGrises(true);
             imgGrises = Imagen.copiar(imagen.getImagen());
+            imagen.filtroMedia(5, true);
             int umbralBinarizacion = 100;
             imagen.binarizar(new Color(umbralBinarizacion, umbralBinarizacion, umbralBinarizacion), true);
-            imagen.filtroMedia(5);
-            umbralBinarizacion = 120;
-            imagen.binarizar(new Color(umbralBinarizacion, umbralBinarizacion, umbralBinarizacion), true);
-            
+            imgBinarizada = Imagen.copiar(imagen.getImagen());
             
             ArrayList<util.Region> regiones = imagen.regionGrowing();
             int[][] matrizContornos = imagen.contornearRegion(imagen.getMatrizRegiones(), regiones.size());
@@ -73,7 +71,6 @@ public class Controlador {
                     }
                 }
             }
-            imgBinarizada = Imagen.copiar(imagen.getImagen());
             
             imgFinal = imagen.getImagen();
             HoughCircular hc = new HoughCircular(imgFinal.getWidth(), imgFinal.getHeight(), exigencia);

@@ -573,26 +573,42 @@ public class Imagen {
 
     public static void main(String[] args) {
         try {
-            BufferedImage original = ImageIO.read(new File("./imagenes2/20141027_093028.png"));
+            /*
+             20141029_091215 //1 monedas
+             5
+             100
+            
+             20141027_093028 //2 monedas
+             5
+             100
+            
+             20141029_094547 //3 monedas
+             5
+             100
+            
+             20141027_093048 //3 monedas
+             2
+             100
+            
+             20141029_094741 //4 monedas
+             5
+             120
+             */
+            BufferedImage original = ImageIO.read(new File("./imagenes2/20141029_094726.png"));
             Imagen imagen = new Imagen(original);
             imagen.fotocopiar();
             imagen.escalaGrises(true);
-            imagen.filtroMedia(2, true);
-            int umbral = 100;
-            imagen.binarizar(new Color(umbral, umbral, umbral), true);
+            imagen.filtroMedia(5, true);
+            //mayor umbral significa que encontrara mas negros
+            int umbralBinarizacion = 100;
+            imagen.binarizar(new Color(umbralBinarizacion, umbralBinarizacion, umbralBinarizacion), true);
+
             ArrayList<Region> regiones = imagen.regionGrowing();
             System.out.println("Encontre " + regiones.size() + " regiones");
 
-            /*int[][] matrizRegiones = imagen.getMatrizRegiones();
-             for (int i = 0; i < matrizRegiones.length; i++) {
-             for (int j = 0; j < matrizRegiones[i].length; j++) {
-             if (matrizRegiones[i][j] != 0) {
-             imagen.pintarPixel(j, i, Color.orange);
-             }
-             }
-             }*/
             int[][] matrizContornos = imagen.contornearRegion(imagen.getMatrizRegiones(), regiones.size());
 
+            //colorear de rojo los contornos hallados
             for (int i = 0; i < matrizContornos.length; i++) {
                 for (int j = 0; j < matrizContornos[i].length; j++) {
                     if (matrizContornos[i][j] == 1) {
@@ -601,6 +617,7 @@ public class Imagen {
                 }
             }
             /*
+             //colorear con color distinto cada region
              Iterator<Region> it = regiones.iterator();
              while (it.hasNext()) {
              Region region = it.next();
