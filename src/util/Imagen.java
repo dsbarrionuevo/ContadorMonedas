@@ -1,5 +1,6 @@
 package util;
 
+import contadormonedas.HoughCircular;
 import java.awt.Color;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -19,6 +20,7 @@ public class Imagen {
 
     private BufferedImage imagen;
     private Color[][] pixeles;
+    private int[][] matrizRegiones;
     private int ancho, alto;
 
     public Imagen(BufferedImage bufferImagen) {
@@ -30,10 +32,11 @@ public class Imagen {
                 this.pixeles[row][col] = new Color(bufferImagen.getRGB(col, row));
             }
         }
+        this.matrizRegiones = new int[this.alto][this.ancho];
         this.imagen = new BufferedImage(this.ancho, this.alto, bufferImagen.getType());
     }
-    
-    public static BufferedImage copiar(BufferedImage bfi){
+
+    public static BufferedImage copiar(BufferedImage bfi) {
         BufferedImage nueva = new BufferedImage(bfi.getWidth(), bfi.getHeight(), bfi.getType());
         for (int i = 0; i < bfi.getWidth(); i++) {
             for (int j = 0; j < bfi.getHeight(); j++) {
@@ -60,7 +63,10 @@ public class Imagen {
         for (int i = 0; i < pixeles.length; i++) {
             for (int j = 0; j < pixeles[i].length; j++) {
                 Color pixel = pixeles[i][j];
-                if (pixel.getRed() < umbral.getRed() && pixel.getGreen() < umbral.getGreen() && pixel.getBlue() < umbral.getBlue()) {
+                //if (pixel.getRed() < umbral.getRed() && pixel.getGreen() < umbral.getGreen() && pixel.getBlue() < umbral.getBlue()) {
+                int intensidadMedia = (int) ((pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3);
+                int umbralMedia = (int) ((umbral.getRed() + umbral.getGreen() + umbral.getBlue()) / 3);
+                if (intensidadMedia < umbralMedia) {
                     imagen.setRGB(j, i, (Color.black).getRGB());
                     if (actualizarPixel) {
                         pixeles[i][j] = (Color.black);
@@ -115,6 +121,10 @@ public class Imagen {
     }
 
     public void filtroMedia(int tamanioVecindad) {
+        this.filtroMedia(tamanioVecindad, false);
+    }
+
+    public void filtroMedia(int tamanioVecindad, boolean actualizarPixel) {
         for (int i = tamanioVecindad; i < pixeles.length - tamanioVecindad; i++) {
             for (int j = tamanioVecindad; j < pixeles[i].length - tamanioVecindad; j++) {
                 //Color pixel = pixeles[i][j];
@@ -133,6 +143,9 @@ public class Imagen {
                 int promedioAzul = azules / cuadradoTamanioTotal;
                 Color colorPromedio = new Color(promedioRojo, promedioVerde, promedioAzul);
                 imagen.setRGB(j, i, colorPromedio.getRGB());
+                if (actualizarPixel) {
+                    pixeles[i][j] = colorPromedio;
+                }
             }
         }
     }
@@ -294,6 +307,27 @@ public class Imagen {
         }
     }
 
+    public ArrayList<Region> regionGrowing() {
+        ArrayList<Region> regiones = new ArrayList<>();
+        int[][] etiquetados = new int[alto][ancho];
+        for (int i = 1; i < pixeles.length - 1; i++) {
+            for (int j = 1; j < pixeles[i].length - 1; j++) {
+                if (etiquetados[i][j] != 0) {
+                    continue;
+                }
+                ArrayList<Punto> puntos = new ArrayList();
+                int semillaX = j;
+                int semillaY = i;
+                tirarPunto(semillaX, semillaY, puntos, etiquetados, i);
+                if (!puntos.isEmpty()) {
+                    regiones.add(new Region(i, puntos));
+                }
+            }
+        }
+        matrizRegiones = etiquetados;
+        return regiones;
+    }
+
     public ArrayList<Region> regionGrowing(int cantidadPruebas) {
         ArrayList<Region> regiones = new ArrayList<>();
         int[][] etiquetados = new int[alto][ancho];
@@ -306,6 +340,7 @@ public class Imagen {
                 regiones.add(new Region(i, puntos));
             }
         }
+        matrizRegiones = etiquetados;
         return regiones;
     }
 
@@ -315,25 +350,113 @@ public class Imagen {
         }
         Color pixel = pixeles[puntoY][puntoX];
         Punto punto = new Punto(puntoX, puntoY);
-        if (puntos.contains(punto)) {
+        if (!puntos.isEmpty() && puntos.contains(punto)) {
             return;
         }
         int intensidadMedia = (pixel.getRed() + pixel.getGreen() + pixel.getBlue()) / 3;
         if (intensidadMedia < 128) {
             puntos.add(punto);
             etiquetados[puntoY][puntoX] = etiqueta;
-            tirarPunto(puntoX - 1, puntoY, puntos, etiquetados, etiqueta);
-            tirarPunto(puntoX + 1, puntoY, puntos, etiquetados, etiqueta);
-            tirarPunto(puntoX, puntoY - 1, puntos, etiquetados, etiqueta);
-            tirarPunto(puntoX, puntoY + 1, puntos, etiquetados, etiqueta);
+            //4-vecindad
             /*
-             for (int i = puntoY - 1; i <= puntoY + 1; i++) {
-             for (int j = puntoX - 1; j <= puntoX + 1; j++) {
-             tirarPunto(i, j, puntos);
-             }
-             }
+             tirarPunto(puntoX - 1, puntoY, puntos, etiquetados, etiqueta);
+             tirarPunto(puntoX + 1, puntoY, puntos, etiquetados, etiqueta);
+             tirarPunto(puntoX, puntoY - 1, puntos, etiquetados, etiqueta);
+             tirarPunto(puntoX, puntoY + 1, puntos, etiquetados, etiqueta);
              */
+
+            //8-vecindad
+            for (int i = puntoY - 1; i <= puntoY + 1; i++) {
+                for (int j = puntoX - 1; j <= puntoX + 1; j++) {
+                    tirarPunto(j, i, puntos, etiquetados, etiqueta);
+                }
+            }
+
         }
+    }
+
+    public int[][] contornearRegion(int matrizRegiones[][], int cantidadRegiones) {
+        //FALTA considerar no sobrepasar el limite del ancho y alto de la imagen
+        int matrizContornos[][] = new int[matrizRegiones.length][matrizRegiones[0].length];
+        int vengoDe = DIR_IZQUIERDA;
+        Punto puntoInicial;
+        //debe irse llenando con las etiquetas de las regiones ya contorneadas
+        ArrayList<Integer> regionesContornedas = new ArrayList<>();
+        for (int i = 1; i < matrizRegiones.length - 1; i++) {
+            for (int j = 1; j < matrizRegiones[i].length - 1; j++) {
+                //continuo si el pixel actual no esta etiquetado
+                if (matrizRegiones[i][j] == 0) {
+                    continue;
+                }
+                //continuo si el pixel actual posee una etiqueta y esta pertenece a una region ya contorneada
+                if (regionesContornedas.contains(matrizRegiones[i][j])) {
+                    continue;
+                }
+                //encontre el primer pixel de una region no contorneada
+                int etiquetaRegion = matrizRegiones[i][j];
+                int etiquetaActual = etiquetaRegion;
+                //contornear
+                puntoInicial = new Punto(j, i);
+                int proxX = puntoInicial.getX();
+                int proxY = puntoInicial.getY();
+                do {
+                    if (etiquetaActual == etiquetaRegion) {
+                        //giro a la izquierda
+                        //para pintar el contorno
+                        imagen.setRGB(proxX, proxY, Color.blue.getRGB());
+                        //puntosContorno.add(new Punto(proxX, proxY));
+                        matrizContornos[proxY][proxX] = 1;// = etiquetaRegion; //?
+                        switch (vengoDe) {
+                            case (DIR_IZQUIERDA):
+                                proxY--; //voy arriba
+                                vengoDe = DIR_ABAJO;
+                                break;
+                            case (DIR_DERECHA):
+                                proxY++;//voy abajo
+                                vengoDe = DIR_ARRIBA;
+                                break;
+                            case (DIR_ARRIBA):
+                                proxX++;
+                                vengoDe = DIR_IZQUIERDA;
+                                break;
+                            case (DIR_ABAJO):
+                                proxX--;
+                                vengoDe = DIR_DERECHA;
+                                break;
+                        }
+                    } else {
+                        //giro a la derecha
+                        switch (vengoDe) {
+                            case (DIR_IZQUIERDA):
+                                proxY++;//voy abajo
+                                vengoDe = DIR_ARRIBA;
+                                break;
+                            case (DIR_DERECHA):
+                                proxY--;//voy arriba
+                                vengoDe = DIR_ABAJO;
+                                break;
+                            case (DIR_ARRIBA):
+                                proxX--;
+                                vengoDe = DIR_DERECHA;
+                                break;
+                            case (DIR_ABAJO):
+                                proxX++;
+                                vengoDe = DIR_IZQUIERDA;
+                                break;
+                        }
+                    }
+                    etiquetaActual = matrizRegiones[proxY][proxX];
+                    if (proxY < 0 || proxY > matrizRegiones.length - 1 || proxX < 0 || proxX > matrizRegiones[0].length - 1) {
+                        break;
+                    }
+                    if (proxX == puntoInicial.getX() && proxY == puntoInicial.getY()) {
+                        break;
+                    }
+                } while (true);
+                regionesContornedas.add(etiquetaRegion);
+            }
+        }
+        return matrizContornos;
     }
 
     private static final int DIR_IZQUIERDA = 0;
@@ -450,35 +573,55 @@ public class Imagen {
 
     public static void main(String[] args) {
         try {
-            BufferedImage original = ImageIO.read(new File("./imagenes/regiones16.png"));
+            BufferedImage original = ImageIO.read(new File("./imagenes2/20141027_093028.png"));
             Imagen imagen = new Imagen(original);
             imagen.fotocopiar();
-            imagen.binarizar(new Color(1, 1, 1), true);
-            ArrayList<Region> regiones = imagen.regionGrowing(imagen.getAncho() * imagen.getAlto());
+            imagen.escalaGrises(true);
+            imagen.filtroMedia(2, true);
+            int umbral = 100;
+            imagen.binarizar(new Color(umbral, umbral, umbral), true);
+            ArrayList<Region> regiones = imagen.regionGrowing();
             System.out.println("Encontre " + regiones.size() + " regiones");
-            Iterator<Region> it = regiones.iterator();
-            while (it.hasNext()) {
-                Region region = it.next();
 
+            /*int[][] matrizRegiones = imagen.getMatrizRegiones();
+             for (int i = 0; i < matrizRegiones.length; i++) {
+             for (int j = 0; j < matrizRegiones[i].length; j++) {
+             if (matrizRegiones[i][j] != 0) {
+             imagen.pintarPixel(j, i, Color.orange);
+             }
+             }
+             }*/
+            int[][] matrizContornos = imagen.contornearRegion(imagen.getMatrizRegiones(), regiones.size());
+
+            for (int i = 0; i < matrizContornos.length; i++) {
+                for (int j = 0; j < matrizContornos[i].length; j++) {
+                    if (matrizContornos[i][j] == 1) {
+                        imagen.pintarPixel(j, i, Color.red);
+                    }
+                }
             }
             /*
-            
-            
-             //imagen.escalaGrises(true);
-             //Color masClaro = imagen.colorMasClaro();
-             //System.out.println("El mas claro fue: "+((masClaro.getRed() + masClaro.getGreen() + masClaro.getBlue()) / 3));
-             //imagen.binarizar(masClaro, true);
-             int umbral = 80;
-             imagen.binarizar(new Color(umbral, umbral, umbral), true);
-
-             ArrayList<Punto> puntosContorno = imagen.contornear();
-             System.out.println("encontre " + puntosContorno.size() + " puntos");
-             for (Punto punto : puntosContorno) {
-             imagen.pintarPixel(punto.getX(), punto.getY(), Color.yellow);
+             Iterator<Region> it = regiones.iterator();
+             while (it.hasNext()) {
+             Region region = it.next();
+             Random randomGenerator = new Random();
+             int red = randomGenerator.nextInt(255);
+             int green = randomGenerator.nextInt(255);
+             int blue = randomGenerator.nextInt(255);
+             Color colorRegion = new Color(red, green, blue);
+             ArrayList<Punto> puntos = region.getPuntos();
+             if (puntos != null) {
+             Iterator<Punto> itPuntos = puntos.iterator();
+             while (itPuntos.hasNext()) {
+             Punto punto = itPuntos.next();
+             imagen.pintarPixel(punto.getX(), punto.getY(), colorRegion);
              }
-
+             }
+             }
              */
-            imagen.guardar("./imagenes/_resultado.png");
+            //transformada de hough:
+            //...
+            imagen.guardar("./imagenes2/_resultado.png");
         } catch (IOException ex) {
             Logger.getLogger(Imagen.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -495,6 +638,10 @@ public class Imagen {
 
     public int getAlto() {
         return alto;
+    }
+
+    public int[][] getMatrizRegiones() {
+        return matrizRegiones;
     }
 
 }

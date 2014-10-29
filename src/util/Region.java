@@ -12,7 +12,8 @@ public class Region {
     private int etiqueta;
 
     public Region(int etiqueta, ArrayList<Punto> puntos) {
-        puntos = new ArrayList();
+        this.etiqueta = etiqueta;
+        this.puntos = puntos;
     }
 
     @Override
