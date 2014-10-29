@@ -61,15 +61,35 @@ public class Controlador {
             imagen.filtroMedia(5);
             umbralBinarizacion = 120;
             imagen.binarizar(new Color(umbralBinarizacion, umbralBinarizacion, umbralBinarizacion), true);
+            
+            
+            ArrayList<util.Region> regiones = imagen.regionGrowing();
+            int[][] matrizContornos = imagen.contornearRegion(imagen.getMatrizRegiones(), regiones.size());
+
+            for (int i = 0; i < matrizContornos.length; i++) {
+                for (int j = 0; j < matrizContornos[i].length; j++) {
+                    if (matrizContornos[i][j] == 1) {
+                        imagen.pintarPixel(j, i, Color.red);
+                    }
+                }
+            }
             imgBinarizada = Imagen.copiar(imagen.getImagen());
+            
             imgFinal = imagen.getImagen();
             HoughCircular hc = new HoughCircular(imgFinal.getWidth(), imgFinal.getHeight(), exigencia);
-            for (int i = 0; i < imgFinal.getWidth(); i++) {
-                for (int j = 0; j < imgFinal.getHeight(); j++) {
-                    Color color = new Color(imgFinal.getRGB(i, j));
-                    if (color.equals(Color.black)) {
-                        // Encontré un pixel negro.
-                        hc.addXY(j, i);
+//            for (int i = 0; i < imgFinal.getWidth(); i++) {
+//                for (int j = 0; j < imgFinal.getHeight(); j++) {
+//                    Color color = new Color(imgFinal.getRGB(i, j));
+//                    if (color.equals(Color.black)) {
+//                        // Encontré un pixel negro.
+//                        hc.addXY(j, i);
+//                    }
+//                }
+//            }
+            for(int i = 0; i < matrizContornos.length; i++){
+                for (int j = 0; j < matrizContornos[i].length; j++) {
+                    if(matrizContornos[i][j] == 1){
+                        hc.addXY(i, j);
                     }
                 }
             }
@@ -80,11 +100,11 @@ public class Controlador {
                 hc.dibujarParametros(imgFinal);
                 int max = hc.getMaxAcumulado();
                 int umbral = (int) (max * exigencia);
-                //int umbral2 = (int) (max * 0.5);
+                int umbral2 = (int) (max * 0.3);
                 sb.append("La cantidad de círculos detectados cuyo radio aproximado es ");
                 sb.append(radio);
                 sb.append(" fueron ");
-                sb.append(DetectorRegiones.getRegiones(hc.getMatrizAcumuladora(), umbral, max).size());
+                sb.append(DetectorRegiones.getRegiones(hc.getMatrizAcumuladora(), umbral, umbral2, max).size());
                 sb.append("\n");
             }
             System.out.println(sb.toString());

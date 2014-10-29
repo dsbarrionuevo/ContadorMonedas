@@ -68,11 +68,11 @@ public class HoughCircular {
         for (int i = 0; i < this.acumuladora.length; i++) {
             for (int j = 0; j < this.acumuladora[0].length; j++) {
                 if (this.acumuladora[i][j] >= lim4 && this.acumuladora[i][j] < lim3) {
-//                    img.setRGB(j, i, Color.blue.getRGB());
+                    img.setRGB(j, i, Color.blue.getRGB());
                 } else if (this.acumuladora[i][j] >= lim3 && this.acumuladora[i][j] < lim2) {
-//                    img.setRGB(j, i, Color.yellow.getRGB());
+                    img.setRGB(j, i, Color.yellow.getRGB());
                 } else if (this.acumuladora[i][j] >= lim2 && this.acumuladora[i][j] < lim1) {
-//                    img.setRGB(j, i, Color.orange.getRGB());
+                    img.setRGB(j, i, Color.orange.getRGB());
                 } else if (this.acumuladora[i][j] >= lim1) {
                     img.setRGB(j, i, Color.red.getRGB());
                     dibujarCirculo(j, i, img);
@@ -95,8 +95,8 @@ public class HoughCircular {
                 if (x >= 0 && x < ANCHO && y >= 0 && y < ALTO && y - (y - b) * 2 >= 0) {
                     bf.setRGB(x, y, Color.green.getRGB());
                     bf.setRGB(x, y - (y - b) * 2, Color.green.getRGB());
-                    bf.setRGB(x - 1, y - 1, Color.green.getRGB());
-                    bf.setRGB(x + 1, (y - (y - b) * 2) + 1, Color.green.getRGB());
+//                    bf.setRGB(x - 1, y - 1, Color.green.getRGB());
+//                    bf.setRGB(x + 1, (y - (y - b) * 2) + 1, Color.green.getRGB());
                 }
             }
         }
@@ -214,14 +214,14 @@ class Region {
 
 class DetectorRegiones {
 
-    public static ArrayList<Region> getRegiones(int[][] matrizAcumuladora, int umbral, int max) {
+    public static ArrayList<Region> getRegiones(int[][] matrizAcumuladora, int umbral, int umbral2, int max) {
         ArrayList<Region> regiones = new ArrayList<Region>();
         boolean vistos[][] = new boolean[matrizAcumuladora.length][matrizAcumuladora[0].length];
         for (int i = 0; i < matrizAcumuladora.length; i++) {
             for (int j = 0; j < matrizAcumuladora[0].length; j++) {
                 if (matrizAcumuladora[i][j] >= umbral && !vistos[i][j] && matrizAcumuladora[i][j] <= max) {
                     Region region = new Region();
-                    buscarRegionRec(i, j, region.puntos, matrizAcumuladora, umbral, vistos);
+                    buscarRegionRec(i, j, region.puntos, matrizAcumuladora, umbral2, vistos);
                     regiones.add(region);
                 }
                 vistos[i][j] = true;
