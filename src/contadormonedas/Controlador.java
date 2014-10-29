@@ -23,6 +23,7 @@ public class Controlador {
     private File archivo;
     private double exigencia = 0.95;
     private ArrayList<Integer> radios;
+    private int umbralBinarizacion, tamanioVentana;
     private boolean mostrar;
 
     public Controlador() {
@@ -56,11 +57,10 @@ public class Controlador {
             imagen.fotocopiar();
             imagen.escalaGrises(true);
             imgGrises = Imagen.copiar(imagen.getImagen());
-            imagen.filtroMedia(5, true);
-            int umbralBinarizacion = 100;
+            imagen.filtroMedia(tamanioVentana, true);
             imagen.binarizar(new Color(umbralBinarizacion, umbralBinarizacion, umbralBinarizacion), true);
             imgBinarizada = Imagen.copiar(imagen.getImagen());
-            
+
             ArrayList<util.Region> regiones = imagen.regionGrowing();
             int[][] matrizContornos = imagen.contornearRegion(imagen.getMatrizRegiones(), regiones.size());
 
@@ -71,7 +71,7 @@ public class Controlador {
                     }
                 }
             }
-            
+
             imgFinal = imagen.getImagen();
             HoughCircular hc = new HoughCircular(imgFinal.getWidth(), imgFinal.getHeight(), exigencia);
 //            for (int i = 0; i < imgFinal.getWidth(); i++) {
@@ -83,9 +83,9 @@ public class Controlador {
 //                    }
 //                }
 //            }
-            for(int i = 0; i < matrizContornos.length; i++){
+            for (int i = 0; i < matrizContornos.length; i++) {
                 for (int j = 0; j < matrizContornos[i].length; j++) {
-                    if(matrizContornos[i][j] == 1){
+                    if (matrizContornos[i][j] == 1) {
                         hc.addXY(i, j);
                     }
                 }
@@ -141,6 +141,14 @@ public class Controlador {
 
     void setMostrar(boolean mostrar) {
         this.mostrar = mostrar;
+    }
+
+    public void setUmbralBinarizacion(int umbralBinarizacion) {
+        this.umbralBinarizacion = umbralBinarizacion;
+    }
+
+    public void setTamanioVentana(int tamanioVentana) {
+        this.tamanioVentana = tamanioVentana;
     }
 
     static class Ventana extends JFrame {
