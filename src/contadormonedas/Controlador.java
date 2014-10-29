@@ -61,35 +61,44 @@ public class Controlador {
             imagen.binarizar(new Color(umbralBinarizacion, umbralBinarizacion, umbralBinarizacion), true);
             imgBinarizada = Imagen.copiar(imagen.getImagen());
 
-            ArrayList<util.Region> regiones = imagen.regionGrowing();
-            int[][] matrizContornos = imagen.contornearRegion(imagen.getMatrizRegiones(), regiones.size());
+            boolean aplicarContorno = true;
+            HoughCircular hc;
+            if (aplicarContorno) {
+                ArrayList<util.Region> regiones = imagen.regionGrowing();
+                int[][] matrizContornos = imagen.contornearRegion(imagen.getMatrizRegiones(), regiones.size());
 
-            for (int i = 0; i < matrizContornos.length; i++) {
-                for (int j = 0; j < matrizContornos[i].length; j++) {
-                    if (matrizContornos[i][j] == 1) {
-                        imagen.pintarPixel(j, i, Color.red);
-                    }
-                }
-            }
-
-            imgFinal = imagen.getImagen();
-            HoughCircular hc = new HoughCircular(imgFinal.getWidth(), imgFinal.getHeight(), exigencia);
-//            for (int i = 0; i < imgFinal.getWidth(); i++) {
-//                for (int j = 0; j < imgFinal.getHeight(); j++) {
-//                    Color color = new Color(imgFinal.getRGB(i, j));
-//                    if (color.equals(Color.black)) {
-//                        // Encontré un pixel negro.
-//                        hc.addXY(j, i);
+//                for (int i = 0; i < matrizContornos.length; i++) {
+//                    for (int j = 0; j < matrizContornos[i].length; j++) {
+//                        if (matrizContornos[i][j] == 1) {
+//                            imagen.pintarPixel(j, i, Color.red);
+//                        }
 //                    }
 //                }
-//            }
-            for (int i = 0; i < matrizContornos.length; i++) {
-                for (int j = 0; j < matrizContornos[i].length; j++) {
-                    if (matrizContornos[i][j] == 1) {
-                        hc.addXY(i, j);
+
+                imgFinal = imagen.getImagen();
+                hc = new HoughCircular(imgFinal.getWidth(), imgFinal.getHeight(), exigencia);
+                for (int i = 0; i < matrizContornos.length; i++) {
+                    for (int j = 0; j < matrizContornos[i].length; j++) {
+                        if (matrizContornos[i][j] == 1) {
+                            hc.addXY(i, j);
+                        }
+                    }
+                }
+            } else {
+                imgFinal = imagen.getImagen();
+                hc = new HoughCircular(imgFinal.getWidth(), imgFinal.getHeight(), exigencia);
+                for (int i = 0; i < imgFinal.getWidth(); i++) {
+                    for (int j = 0; j < imgFinal.getHeight(); j++) {
+                        Color color = new Color(imgFinal.getRGB(i, j));
+                        if (color.equals(Color.black)) {
+                            // Encontré un pixel negro.
+                            hc.addXY(j, i);
+                        }
                     }
                 }
             }
+
+
             StringBuilder sb = new StringBuilder();
             for (Integer radio : radios) {
                 hc.addRadio(radio);
@@ -184,5 +193,4 @@ public class Controlador {
             pack();
         }
     }
-
 }
