@@ -382,7 +382,6 @@ public class Imagen {
         int matrizContornos[][] = new int[matrizRegiones.length][matrizRegiones[0].length];
         int vengoDe = DIR_IZQUIERDA;
         Punto puntoInicial;
-        int ii=0;
         //debe irse llenando con las etiquetas de las regiones ya contorneadas
         ArrayList<Integer> regionesContornedas = new ArrayList<>();
         for (int i = 1; i < matrizRegiones.length - 1; i++) {
@@ -458,10 +457,8 @@ public class Imagen {
                     }
                 } while (true);
                 regionesContornedas.add(etiquetaRegion);
-                ii++;
             }
         }
-        System.out.println(ii);
         return matrizContornos;
     }
 

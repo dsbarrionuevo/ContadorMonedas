@@ -25,10 +25,11 @@ public class Controlador {
     private ArrayList<Integer> radios;
     private int umbralBinarizacion, tamanioVentana;
     private boolean mostrar;
+    private VentanaPrincipal vp;
 
     public Controlador() {
         this.radios = new ArrayList<>();
-        VentanaPrincipal vp = new VentanaPrincipal(this);
+         vp = new VentanaPrincipal(this);
         vp.setVisible(true);
     }
 
@@ -67,13 +68,13 @@ public class Controlador {
                 ArrayList<util.Region> regiones = imagen.regionGrowing();
                 int[][] matrizContornos = imagen.contornearRegion(imagen.getMatrizRegiones(), regiones.size());
 
-//                for (int i = 0; i < matrizContornos.length; i++) {
-//                    for (int j = 0; j < matrizContornos[i].length; j++) {
-//                        if (matrizContornos[i][j] == 1) {
-//                            imagen.pintarPixel(j, i, Color.red);
-//                        }
-//                    }
-//                }
+                for (int i = 0; i < matrizContornos.length; i++) {
+                    for (int j = 0; j < matrizContornos[i].length; j++) {
+                        if (matrizContornos[i][j] == 1) {
+                            imagen.pintarPixel(j, i, Color.red);
+                        }
+                    }
+                }
 
                 imgFinal = imagen.getImagen();
                 hc = new HoughCircular(imgFinal.getWidth(), imgFinal.getHeight(), exigencia);
@@ -97,8 +98,6 @@ public class Controlador {
                     }
                 }
             }
-
-
             StringBuilder sb = new StringBuilder();
             for (Integer radio : radios) {
                 hc.addRadio(radio);
@@ -113,12 +112,13 @@ public class Controlador {
                 sb.append(DetectorRegiones.getRegiones(hc.getMatrizAcumuladora(), umbral, umbral2, max).size());
                 sb.append("\n");
             }
+            vp.setResultado(sb.toString());
             System.out.println(sb.toString());
-
-            ImageIO.write(img, "png", new File("imagenes/r1.png"));
-            ImageIO.write(imgGrises, "png", new File("imagenes/r2.png"));
-            ImageIO.write(imgBinarizada, "png", new File("imagenes/r3.png"));
-            ImageIO.write(imgFinal, "png", new File("imagenes/r4.png"));
+            String destino = "pruebas";
+            ImageIO.write(img, "png", new File(destino + "/r1.png"));
+            ImageIO.write(imgGrises, "png", new File(destino + "/r2.png"));
+            ImageIO.write(imgBinarizada, "png", new File(destino + "/r3.png"));
+            ImageIO.write(imgFinal, "png", new File(destino + "/r4.png"));
 
             if (this.mostrar) {
                 Ventana v = new Ventana(img, imgGrises, imgBinarizada, imgFinal, sb.toString());

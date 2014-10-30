@@ -1,0 +1,23 @@
+Prueba: prueba10
+Tolerancia: 0.95
+Umbral: 100
+Filtro: 5
+Radio: 55
+
+Prueba: prueba11
+Tolerancia: 0.95
+Umbral: 100
+Filtro: 5
+Radio: 50, 52
+
+Prueba: prueba12
+Tolerancia: 0.95
+Umbral: 100
+Filtro: 5
+Radio: 44
+
+Prueba: prueba13
+Tolerancia: 0.95
+Umbral: 100
+Filtro: 2
+Radio: 36, 40, 41
